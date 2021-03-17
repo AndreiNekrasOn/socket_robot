@@ -14,17 +14,31 @@
 Robot::Robot()
 {
     roboName = new char[128];
+    strcpy(roboName, "Robot");
+    port = 4774;
+    ip = new char[128];
+    strcpy(ip, "127.0.0.1");
+    nWaitPlayers = 2;
     playingStatus = 0;
     turnNumber = 0;
     playresStates = new PlayersStatesList;
 }
 
-void Robot::setName(const char *name)
+Robot::Robot(char *adress, int p,  char *name, int nWait)
 {
-    strcpy(this->roboName, name);
+    ip = new char[128];
+    roboName = new char[128];
+    strcpy(ip, adress);
+    strcpy(roboName, name);
+    roboName = name;
+    nWaitPlayers = nWait;
+    port = p;
+    playresStates = new PlayersStatesList;
+    turnNumber = 0;
+    playingStatus = 0;
 }
 
-void Robot::connectToGame(int port)
+void Robot::connectToGame()
 {
     int game_socket = 0;
     sockaddr_in serv_addr;
@@ -33,9 +47,10 @@ void Robot::connectToGame(int port)
         printf("Robot::connectToGame error, socket returned < 0\n");
         exit(1);
     }
+    printf("addr=%s port=%d\n", this->ip, this->port);
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv_addr.sin_port = htons(this->port);
+    serv_addr.sin_addr.s_addr = inet_addr(this->ip);
 
     if (connect(game_socket, (sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
     {
@@ -57,13 +72,13 @@ char* Robot::recvMsg()
     char* buffer = new char[1024];
     int rc = read(this->gameSocket, buffer, 1023);
     buffer[rc] = 0;
+    printf("%s\n", buffer);
     return buffer;
 }
 
 void Robot::printAndRecvMsg()
 {
     char* buffer = recvMsg();
-    printf("%s\n", buffer);
     delete buffer;
 }
 
@@ -74,7 +89,6 @@ int Robot::enterGame()
     const char* game_indicator = "waiting  #";
     sendMsg(".who\n");
     char* answer = recvMsg();
-    printf("%s\n", answer);
     char* waiting_pos = strstr(answer, game_indicator);
     int game_number;
     if (waiting_pos != NULL)
@@ -85,7 +99,6 @@ int Robot::enterGame()
         sendMsg(buf);
         printAndRecvMsg();
         suckass = 1;
-        waitForStart();
     }
     delete answer;
     return suckass;
@@ -97,15 +110,15 @@ void Robot::createGame()
     printAndRecvMsg();
     const char *join_msg = "@+ JOIN";
     int players_counter = 1;
+    printf("waiting for %d players\n", nWaitPlayers);
     while(1)
     {
         char *msg = recvMsg();
-        printf("%s", msg);
         if (strstr(msg, join_msg) != NULL)
         {
             players_counter++;
         }
-        if (players_counter == 2)
+        if (players_counter == nWaitPlayers)
         {
             break;
         }
@@ -122,8 +135,7 @@ void Robot::waitForStart()
     while (flag)
     {
         msg = recvMsg();
-        printf("%s\n", msg);
-        flag = strncmp(msg, start_msg, strlen(start_msg));
+        flag = strncmp(msg, start_msg, strlen(start_msg)) != 0;
         printf("\\flag is %d\n", flag);
         delete msg;
     }
@@ -135,13 +147,15 @@ void Robot::updateMarketInfo()
     const char* market = "& MARKET";
     sendMsg("market\n");
     msg = recvMsg();
-    if (msg != NULL)
+    while(strstr(msg, market) == NULL)
     {
-        printf("%s\n", msg);
-        sscanf(strstr(msg, market) + strlen(market), "%d%d%d%d",
-               &(currentMarketInfo.raw), &(currentMarketInfo.minPrice),
-               &(currentMarketInfo.prod), &(currentMarketInfo.maxPrice));
+        delete msg;
+        sendMsg("market\n");
+        msg = recvMsg();
     }
+    sscanf(strstr(msg, market) + strlen(market), "%d%d%d%d",
+        &(currentMarketInfo.raw), &(currentMarketInfo.minPrice),
+        &(currentMarketInfo.prod), &(currentMarketInfo.maxPrice));
     delete msg;
 }
 
@@ -236,20 +250,10 @@ bool Robot::isGameFinished()
 // int k = 0;
 void Robot::updatePlayersStates()
 {
-    // printf("current playerList:\n");
-    // delete playresStates;
-    playresStates = new PlayersStatesList(); // update it each time to avoid problems with existing bla-bla-bla
+    playresStates = new PlayersStatesList(); 
 
     sendMsg("info\n");
     char* info_msg = recvMsg();
-    // char* info_msg = new char[1024];
-    // strcpy(
-    //     info_msg,
-    //     "# -----             Name  Raw Prod    Money Plants AutoPlants\n& "
-    //     "INFO             Robot    2    2    9999    2    0\n& INFO       "
-    //     "      Andrei       2    2    10000   2    0\n# -----\n& PLAYERS  "
-    //     "         2         WATCHERS    0\n# -----)\n");
-    printf("%s\n", info_msg);
     const char* table_entry_label = "& INFO";
     char* tmp = info_msg;
     tmp = strstr(tmp, table_entry_label);
@@ -299,11 +303,11 @@ void Robot::run()
     char* action_msg = new char[256];
     sprintf(action_msg, "%s\n", roboName);
     sendMsg(action_msg);
-    sendMsg("Robot\n"); // set name
     if (!enterGame())
     {
         createGame();
     }
+    waitForStart();
     bool flag = true;
     while (flag)
     {

@@ -14,12 +14,15 @@ class Robot
     int playingStatus;
     int turnNumber;
     char *roboName;
+    char *ip;
+    int port;
+    int nWaitPlayers;
 
 public:
     Robot();
-    void setName(const char *name);
+    Robot(char *adress, int p, char *name, int nWait);
 
-    void connectToGame(int port);
+    void connectToGame();
 
     char* recvMsg();
     void sendMsg(const char* msg);
