@@ -1,3 +1,4 @@
-clear
 make clean
-make run
+clear
+make
+./robot.out $1 $2 $3 $4

@@ -171,6 +171,10 @@ void Robot::updateTradingLog(const char* log_msg)
     TradingResult res;
     char* tmp = msg;
     tmp = strstr(tmp, table_entry_label);
+    if (!strstr(tmp, "Trading results")) {
+        fprintf(stderr, "Incorrect massege to parse ?");
+        exit(1);
+    }
     while (strncmp(tmp, end_prefix, strlen(end_prefix)) != 0 && strncmp(tmp, bankrupt_prefix, strlen(bankrupt_prefix)) != 0)
     {
         res.turnNumber = this->turnNumber;
