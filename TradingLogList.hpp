@@ -13,16 +13,19 @@ struct TradingResult
     int amount;
     int price;
 
-    TradingResult() { playerName = new char[128]; }
+    TradingResult()
+    {
+        playerName = new char[128];
+    }
     ~TradingResult()
     {
-        printf("in trdingresult destructor: %s\n", playerName);
+        // printf("in trdingresult destructor: %s\n", playerName);
         delete playerName;
     }
 
-    const TradingResult &operator=(const TradingResult& tr)
+    const TradingResult& operator=(const TradingResult& tr)
     {
-        printf("in operator= of TradingResult\n");
+        // printf("in operator= of TradingResult\n");
         strcpy(playerName, tr.playerName);
         turnNumber = tr.turnNumber;
         action = tr.action;
@@ -30,7 +33,6 @@ struct TradingResult
         price = tr.price;
         return *this;
     }
-    
 };
 class TradingLogList
 {
@@ -45,6 +47,6 @@ public:
     TradingLogList();
     ~TradingLogList();
     void printList();
-    void add(const TradingResult &log_line);
+    void add(const TradingResult& log_line);
 };
 #endif // __PRAK_STOLAR_ROBOT_TRADINGLOGLIST_HPP_

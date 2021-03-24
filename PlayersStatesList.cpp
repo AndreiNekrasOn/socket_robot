@@ -9,7 +9,7 @@ State::State()
     , plants(2)
     , prod(2)
 {
-    printf("in the constructor of state\n");
+    // printf("in the constructor of state\n");
     name = new char[128];
 }
 
@@ -19,11 +19,11 @@ State::State(const State& st)
     , plants(st.plants)
     , prod(st.prod)
 {
-    printf("in copy constructor of state for ''%s''\n", st.name);
+    // printf("in copy constructor of state for ''%s''\n", st.name);
     name = new char[128];
-    printf("able to new\n");
+    // printf("able to new\n");
     strcpy(name, st.name);
-    printf("able to strcpy\n");
+    // printf("able to strcpy\n");
 }
 
 PlayersStatesList::PlayersStatesList()
@@ -33,7 +33,7 @@ PlayersStatesList::PlayersStatesList()
 
 PlayersStatesList::~PlayersStatesList()
 {
-    printf("PANIC PANIC PANIC IN DESTRUCTOR OF PLAYERS STATES LIST\n");
+    // printf("PANIC PANIC PANIC IN DESTRUCTOR OF PLAYERS STATES LIST\n");
     while (head != NULL)
     {
         Node* n = head->next;
@@ -44,37 +44,37 @@ PlayersStatesList::~PlayersStatesList()
 }
 PlayersStatesList::Node* PlayersStatesList::findByName(const char* name)
 {
-    printf("in findByName\n");
-    printf("head is null? %d\n", head == NULL);
+    // printf("in findByName\n");
+    // printf("head is null? %d\n", head == NULL);
     printList();
-    for (Node *i = head; i != NULL; i = i->next)
+    for (Node* i = head; i != NULL; i = i->next)
     {
-        printf("in for findByName\n");
-        printf("i->data is null? %d\n", i->data.name == NULL);
+        // printf("in for findByName\n");
+        // printf("i->data is null? %d\n", i->data.name == NULL);
         if (strcmp(i->data.name, name) == 0)
         {
             return i;
         }
     }
-    printf("return null from findByName\n");
+    // printf("return null from findByName\n");
     return NULL;
 }
 void PlayersStatesList::updateAndAdd(State st)
 {
-    printf("in updateAndAdd\n");
-    printf("st.name is null? %d\n", st.name == NULL);
-    Node *player = findByName(st.name);
+    // printf("in updateAndAdd\n");
+    // printf("st.name is null? %d\n", st.name == NULL);
+    Node* player = findByName(st.name);
     if (player != NULL)
     {
-        printf("FOUND EXISTING PLAYR\n");
+        // printf("FOUND EXISTING PLAYR\n");
         player->data = st;
     }
     else
     {
-        printf("in updateAndAdd else branch\n");
+        // printf("in updateAndAdd else branch\n");
         Node* n = new Node;
         n->data = st;
-        printf("node name %s\n", n->data.name);
+        // printf("node name %s\n", n->data.name);
         n->next = head;
         head = n;
     }
@@ -82,8 +82,9 @@ void PlayersStatesList::updateAndAdd(State st)
 
 void PlayersStatesList::printList()
 {
-    if (head == NULL) return;
-    printf("printState head %s\n", head->data.name);
+    if (head == NULL)
+        return;
+    // printf("printState head %s\n", head->data.name);
     for (Node* i = head; i != NULL; i = i->next)
     {
         State* st = &i->data;

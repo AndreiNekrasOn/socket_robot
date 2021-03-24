@@ -17,7 +17,7 @@ TradingLogList::~TradingLogList()
     }
 }
 
-void TradingLogList::add(const TradingResult &log_line)
+void TradingLogList::add(const TradingResult& log_line)
 {
     Node* n = new Node;
     n->data = log_line;
@@ -27,7 +27,7 @@ void TradingLogList::add(const TradingResult &log_line)
 
 void TradingLogList::printList()
 {
-    printf("\\printing trades log...\n");
+    // printf("\\printing trades log...\n");
     for (Node* i = head; i != NULL; i = i->next)
     {
         printf("Trading log: Turn#%d, Name: %s, Action: %s,  Amount: %d, "

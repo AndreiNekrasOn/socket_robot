@@ -13,14 +13,14 @@ class Robot
     int gameSocket;
     int playingStatus;
     int turnNumber;
-    char *roboName;
-    char *ip;
+    char* roboName;
+    char* ip;
     int port;
     int nWaitPlayers;
 
 public:
     Robot();
-    Robot(char *adress, int p, char *name, int nWait);
+    Robot(char* adress, int p, char* name, int nWait);
 
     void connectToGame();
 
@@ -32,8 +32,8 @@ public:
     void createGame();
 
     void waitForStart();
-    void waitForTurnEnd();
-    bool isGameFinished();
+    bool waitForTurnEnd();
+    bool isGameFinished(const char* end_turn_msg);
 
     void setStrategy();
     void makeTurn();

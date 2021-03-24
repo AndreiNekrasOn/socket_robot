@@ -17,13 +17,13 @@ struct State
 
     ~State()
     {
-        printf("in state destructor: %s\n", name);
+        // printf("in state destructor: %s\n", name);
         delete name; // if comment it fixes all
         name = NULL; // so it's noop
     }
-    const State &operator=(const State& st)
+    const State& operator=(const State& st)
     {
-        printf("in operator= of state\n");
+        // printf("in operator= of state\n");
         strcpy(name, st.name);
         money = st.money;
         raw = st.raw;

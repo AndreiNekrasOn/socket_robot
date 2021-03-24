@@ -24,7 +24,7 @@ Robot::Robot()
     playresStates = new PlayersStatesList;
 }
 
-Robot::Robot(char *adress, int p,  char *name, int nWait)
+Robot::Robot(char* adress, int p, char* name, int nWait)
 {
     ip = new char[128];
     roboName = new char[128];
@@ -63,12 +63,14 @@ void Robot::connectToGame()
 
 void Robot::sendMsg(const char* msg)
 {
+    printf("sendMsg()...\n");
     printf("> %s", msg);
     write(this->gameSocket, msg, strlen(msg));
 }
 
 char* Robot::recvMsg()
 {
+    printf("recieving msg...\n");
     char* buffer = new char[1024];
     int rc = read(this->gameSocket, buffer, 1023);
     buffer[rc] = 0;
@@ -84,6 +86,7 @@ void Robot::printAndRecvMsg()
 
 int Robot::enterGame()
 {
+    printf("enterGame()...\n");
     printAndRecvMsg(); // greeting msg to trash, where it belongs!
     int suckass = 0;
     const char* game_indicator = "waiting  #";
@@ -106,14 +109,15 @@ int Robot::enterGame()
 
 void Robot::createGame()
 {
+    printf("createGame()...\n");
     sendMsg(".create\n");
     printAndRecvMsg();
-    const char *join_msg = "@+ JOIN";
+    const char* join_msg = "@+ JOIN";
     int players_counter = 1;
     printf("waiting for %d players\n", nWaitPlayers);
-    while(1)
+    while (1)
     {
-        char *msg = recvMsg();
+        char* msg = recvMsg();
         if (strstr(msg, join_msg) != NULL)
         {
             players_counter++;
@@ -129,6 +133,7 @@ void Robot::createGame()
 
 void Robot::waitForStart()
 {
+    printf("waitForStart()...\n");
     char* msg;
     const char* start_msg = "& START";
     bool flag = true;
@@ -143,24 +148,27 @@ void Robot::waitForStart()
 
 void Robot::updateMarketInfo()
 {
+    printf("updateMarketInfo()...\n");
     char* msg;
     const char* market = "& MARKET";
     sendMsg("market\n");
     msg = recvMsg();
-    while(strstr(msg, market) == NULL)
+    while (strstr(msg, market) == NULL)
     {
         delete msg;
         sendMsg("market\n");
         msg = recvMsg();
+        // sleep(1);
     }
     sscanf(strstr(msg, market) + strlen(market), "%d%d%d%d",
-        &(currentMarketInfo.raw), &(currentMarketInfo.minPrice),
-        &(currentMarketInfo.prod), &(currentMarketInfo.maxPrice));
+           &(currentMarketInfo.raw), &(currentMarketInfo.minPrice),
+           &(currentMarketInfo.prod), &(currentMarketInfo.maxPrice));
     delete msg;
 }
 
 void Robot::updateTradingLog(const char* log_msg)
 {
+    printf("updateTradingLog()...\n");
     printf("%s\n", log_msg);
     const char* end_prefix = "& ENDTURN";
     const char* bankrupt_prefix = "& BANKRUPT";
@@ -170,12 +178,17 @@ void Robot::updateTradingLog(const char* log_msg)
     strcpy(msg, log_msg);
     TradingResult res;
     char* tmp = msg;
-    tmp = strstr(tmp, table_entry_label);
-    if (!strstr(tmp, "Trading results")) {
-        fprintf(stderr, "Incorrect massege to parse ?");
+
+    if (strstr(tmp, "Trading results") == NULL)
+    {
+        fprintf(stderr, "Incorrect massege to parse?\n\tmsg:\n%s\n", tmp);
         exit(1);
     }
-    while (strncmp(tmp, end_prefix, strlen(end_prefix)) != 0 && strncmp(tmp, bankrupt_prefix, strlen(bankrupt_prefix)) != 0)
+
+    tmp = strstr(tmp, table_entry_label);
+
+    while (strncmp(tmp, end_prefix, strlen(end_prefix)) != 0
+           && strncmp(tmp, bankrupt_prefix, strlen(bankrupt_prefix)) != 0)
     {
         res.turnNumber = this->turnNumber;
         res.action
@@ -194,6 +207,7 @@ void Robot::updateTradingLog(const char* log_msg)
 
 void Robot::makeTurn()
 {
+    printf("makeTurn()...\n");
     char* action_msg = new char[256];
     updatePlayersStates();
     this->playresStates->printList();
@@ -219,46 +233,62 @@ void Robot::makeTurn()
     delete action_msg;
 }
 
-void Robot::waitForTurnEnd()
+bool Robot::waitForTurnEnd()
 {
+    printf("waitForTurnEnd()...\n");
     bool flag = true;
     const char* end_turn_msg = "& ENDTURN";
     char* msg;
     while (flag)
     {
         msg = recvMsg();
-        flag = strstr(msg, end_turn_msg) != NULL;
+        if (strstr(msg, end_turn_msg) != NULL)
+        {
+            break;
+        }
         delete msg;
     }
+    flag = isGameFinished(msg);
+    delete msg;
     turnNumber++;
+    return flag;
 }
 
-bool Robot::isGameFinished()
+bool Robot::isGameFinished(const char* end_turn_msg)
 {
-    const char* winner = "WINNER";
-    const char* bankrupt = "BANKRUPT";
-    const char* game_over = "&- The game is over, type quit to quit...";
-    char* msg = recvMsg();
-    bool flag = strstr(msg, winner) != NULL
-        || strstr(msg, bankrupt) != NULL || strstr(msg, game_over);
+    printf("isGameFinished()...\n");
+    const char* winner = "YOU_WIN";
+    const char* bankrupt = "You are a bankrupt";
+    const char* game_over = "The game is over";
+    bool flag = strstr(end_turn_msg, winner) != NULL
+        || strstr(end_turn_msg, bankrupt) != NULL
+        || strstr(end_turn_msg, game_over) != NULL;
 
-    updateTradingLog(msg);
     if (flag)
     {
-        printf("\\last msg:\n%s\n", msg);
+        printf("\\last msg:\n%s\n", end_turn_msg);
     }
-    delete msg;
     return flag;
 }
 
 // int k = 0;
 void Robot::updatePlayersStates()
 {
-    playresStates = new PlayersStatesList(); 
+    printf("updatePlayersStates()...\n");
+    playresStates = new PlayersStatesList();
 
     sendMsg("info\n");
     char* info_msg = recvMsg();
     const char* table_entry_label = "& INFO";
+
+    while (strstr(info_msg, table_entry_label) == NULL)
+    {
+        delete info_msg;
+        sendMsg("info\n");
+        info_msg = recvMsg();
+        // sleep(1);
+    }
+
     char* tmp = info_msg;
     tmp = strstr(tmp, table_entry_label);
 
@@ -268,7 +298,8 @@ void Robot::updatePlayersStates()
         tmp += strlen(table_entry_label);
         sscanf(tmp, "%s%d%d%d%d", st.name, &st.raw, &st.prod, &st.money,
                &st.plants);
-        // if (strcmp(st.name, "Robot") == 0) { st.money -= k * 1000; k++; } // DEBUG
+        // if (strcmp(st.name, "Robot") == 0) { st.money -= k * 1000; k++;
+        // } // DEBUG
         printf("\\parsed info: player %s\n", st.name);
         this->playresStates->updateAndAdd(st);
         this->playresStates->printList();
@@ -283,26 +314,9 @@ void Robot::updatePlayersStates()
     delete info_msg;
 }
 
-// void Robot::updatePlayersStates()
-// {
-//     if (1 == 1)
-//     {
-//         State s1, s2, s3;
-//         sscanf("dummyname1", "%s", s1.name);
-//         sscanf("dummyname2", "%s", s2.name);
-//         s2.money = 999;
-//         sscanf("dummyname3", "%s", s3.name);
-//         printf("%s %s %s\n", s1.name, s2.name, s3.name);
-//         this->playresStates->updateAndAdd(s1);
-//         this->playresStates->updateAndAdd(s2);
-//         this->playresStates->updateAndAdd(s3);
-//     }
-
-//     this->playresStates->printList();
-// }
-
 void Robot::run()
 {
+    printf("run()...\n");
     printAndRecvMsg();
     char* action_msg = new char[256];
     sprintf(action_msg, "%s\n", roboName);
@@ -316,8 +330,7 @@ void Robot::run()
     while (flag)
     {
         makeTurn();
-        waitForTurnEnd();
-        flag = !isGameFinished();
+        flag = !waitForTurnEnd();
     }
     this->log.printList();
 }
