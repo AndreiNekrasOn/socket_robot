@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 enum LexemeType
 {
@@ -23,17 +23,19 @@ enum SymbolType
     EqualitySign,
     Colon,
     Mark,
-    Operation, 
+    Operation,
     SymbolError
 };
 
-struct Lexeme 
+struct Lexeme
 {
     int lineNumber;
     LexemeType type;
-    char *value;
-    Lexeme *next;
-    Lexeme(int line, LexemeType t, const char *s) : lineNumber(line), type(t) 
+    char* value;
+    Lexeme* next;
+    Lexeme(int line, LexemeType t, const char* s)
+        : lineNumber(line)
+        , type(t)
     {
         if (s != 0)
         {
@@ -43,11 +45,11 @@ struct Lexeme
         else
             value = 0;
     }
-    const char *getTypeString();
-    Lexeme(const Lexeme &l);
+    const char* getTypeString();
+    Lexeme(const Lexeme& l);
 };
 
-Lexeme::Lexeme(const Lexeme &l)
+Lexeme::Lexeme(const Lexeme& l)
 {
     lineNumber = l.lineNumber;
     type = l.type;
@@ -55,7 +57,7 @@ Lexeme::Lexeme(const Lexeme &l)
     strcpy(value, l.value);
 }
 
-const char *Lexeme::getTypeString()
+const char* Lexeme::getTypeString()
 {
     switch (type)
     {
@@ -78,26 +80,31 @@ const char *Lexeme::getTypeString()
 
 class LexemeList
 {
-    Lexeme *head;
-    Lexeme *tail;
+    Lexeme* head;
+    Lexeme* tail;
+
 public:
-    LexemeList() : head(0), tail(0) {}
+    LexemeList()
+        : head(0)
+        , tail(0)
+    {
+    }
     void add(Lexeme l);
     void display();
 };
 
-void LexemeList::add(Lexeme l) 
-{     
-    Lexeme *tmp =new Lexeme(0, Number, 0); 
+void LexemeList::add(Lexeme l)
+{
+    Lexeme* tmp = new Lexeme(0, Number, 0);
     *tmp = l;
     tmp->next = 0;
-    if(head == 0)
+    if (head == 0)
     {
         head = tmp;
         tail = tmp;
     }
     else
-    {	
+    {
         tail->next = tmp;
         tail = tmp;
     }
@@ -105,21 +112,21 @@ void LexemeList::add(Lexeme l)
 
 void LexemeList::display()
 {
-    for (Lexeme *tmp = head; tmp != 0; tmp = tmp->next)
+    for (Lexeme* tmp = head; tmp != 0; tmp = tmp->next)
     {
-        printf("Lexeme Type: \"%s\"\tLine Number: %d\tValue: %s\n", 
-                tmp->getTypeString(), tmp->lineNumber, tmp->value);
+        printf("Lexeme Type: \"%s\"\tLine Number: %d\tValue: %s\n",
+               tmp->getTypeString(), tmp->lineNumber, tmp->value);
     }
-} 
+}
 
 class LexAnalyser
 {
-    friend int main(int argc, char *argv[]); // for debug!
+    friend int main(int argc, char* argv[]); // for debug!
     enum State
     {
         N,
         I,
-        K, 
+        K,
         A,
         S,
         H,
@@ -130,7 +137,7 @@ class LexAnalyser
         bufSize = 1024
     };
     LexemeList lexList;
-    char *buffer;
+    char* buffer;
     int size;
     int currentSymbolType;
     int currentLine;
@@ -146,14 +153,15 @@ class LexAnalyser
     void error();
 
     SymbolType getSymbolType(int c);
-    
 
 public:
-    LexemeList getLexemeList() { return lexList; }
+    LexemeList getLexemeList()
+    {
+        return lexList;
+    }
     LexAnalyser();
     void step(int c);
 };
-
 
 LexAnalyser::LexAnalyser()
 {
@@ -168,15 +176,15 @@ SymbolType LexAnalyser::getSymbolType(int c)
 {
     if (isspace(c) || c == ';' || c == ',' || c == '{' || c == '}')
         return Separator;
-    else if (isalpha(c)) 
+    else if (isalpha(c))
         return Alpha;
     else if (isdigit(c))
         return Digit;
     else if (c == '$' || c == '@' || c == '?')
         return Mark;
-    else if (c == '+' || c == '-' || c == '*' || c == '/' || 
-            c == '%' || c == '<' || c == '>'|| c == ')' || 
-            c == '(' || c == ']' || c == '[')
+    else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%'
+             || c == '<' || c == '>' || c == ')' || c == '(' || c == ']'
+             || c == '[')
         return Operation;
     else if (c == '=')
         return EqualitySign;
@@ -192,32 +200,33 @@ void LexAnalyser::switchState()
     currentSymbolType = getSymbolType(buffer[size - 1]);
     switch (state)
     {
-        case N:
-            number();
-            break;
-        case I:
-            ident();
-            break;
-        case K:
-            keyword();
-            break;
-        case A:
-            assigment();
-            break;
-        case S:
-            string();
-            break;
-        case H:
-            start();
-            break;
-        default:
-            break;
+    case N:
+        number();
+        break;
+    case I:
+        ident();
+        break;
+    case K:
+        keyword();
+        break;
+    case A:
+        assigment();
+        break;
+    case S:
+        string();
+        break;
+    case H:
+        start();
+        break;
+    default:
+        break;
     }
 }
 
 void LexAnalyser::number()
 {
-    if (currentSymbolType == Operation || currentSymbolType == EqualitySign)
+    if (currentSymbolType == Operation
+        || currentSymbolType == EqualitySign)
     {
         buffer[size] = buffer[size - 1];
         buffer[size - 1] = 0;
@@ -251,7 +260,9 @@ void LexAnalyser::error()
 
 void LexAnalyser::ident()
 {
-    if(currentSymbolType == Operation || currentSymbolType == EqualitySign || currentSymbolType == Colon){
+    if (currentSymbolType == Operation || currentSymbolType == EqualitySign
+        || currentSymbolType == Colon)
+    {
         buffer[size] = buffer[size - 1];
         buffer[size - 1] = 0;
         buffer[size + 1] = 0;
@@ -260,13 +271,14 @@ void LexAnalyser::ident()
         size = 1;
         state = H;
     }
-    else if(currentSymbolType == Separator){
+    else if (currentSymbolType == Separator)
+    {
         buffer[size - 1] = 0;
         lexList.add(Lexeme(currentLine, Identificator, buffer));
         size = 0;
         state = H;
     }
-    else if(currentSymbolType == Alpha || currentSymbolType == Digit)
+    else if (currentSymbolType == Alpha || currentSymbolType == Digit)
         state = I;
     else
         error();
@@ -274,7 +286,9 @@ void LexAnalyser::ident()
 
 void LexAnalyser::keyword()
 {
-    if(currentSymbolType == Operation || currentSymbolType == EqualitySign){
+    if (currentSymbolType == Operation
+        || currentSymbolType == EqualitySign)
+    {
         buffer[size] = buffer[size - 1];
         buffer[size - 1] = 0;
         buffer[size + 1] = 0;
@@ -283,22 +297,23 @@ void LexAnalyser::keyword()
         size = 1;
         state = H;
     }
-    else if(currentSymbolType == Separator){
+    else if (currentSymbolType == Separator)
+    {
         buffer[size - 1] = 0;
         lexList.add(Lexeme(currentLine, Keyword, buffer));
         size = 0;
         state = H;
     }
-    else if(currentSymbolType == Alpha)
+    else if (currentSymbolType == Alpha)
         state = K;
     else
         error();
-    
 }
 
 void LexAnalyser::assigment()
 {
-    if(currentSymbolType == EqualitySign){
+    if (currentSymbolType == EqualitySign)
+    {
         buffer[size] = 0;
         lexList.add(Lexeme(currentLine, AssigmentOperator, buffer));
         size = 0;
@@ -310,7 +325,8 @@ void LexAnalyser::assigment()
 
 void LexAnalyser::string()
 {
-    if(currentSymbolType == Quote){
+    if (currentSymbolType == Quote)
+    {
         buffer[size] = 0;
         lexList.add(Lexeme(currentLine, String, buffer));
         size = 0;
@@ -322,47 +338,47 @@ void LexAnalyser::string()
 
 void LexAnalyser::start()
 {
-    if (size == 2 && getSymbolType(buffer[0]) == Colon) 
+    if (size == 2 && getSymbolType(buffer[0]) == Colon)
     {
         state = A;
         assigment();
         return;
     }
-    else if (size == 2) // dont understand yet
+    else if (size == 2)
     {
-        buffer[size] = buffer[size - 1]; 
+        buffer[size] = buffer[size - 1];
         buffer[size - 1] = 0;
         lexList.add(Lexeme(currentLine, String, buffer));
-        // lexems = addToList(buf, line, H);
         buffer[0] = buffer[size];
         size = 1;
     }
-    if((currentSymbolType == Operation || currentSymbolType == EqualitySign) && size == 1){
+    if ((currentSymbolType == Operation
+         || currentSymbolType == EqualitySign)
+        && size == 1)
+    {
         buffer[size] = 0;
         lexList.add(Lexeme(currentLine, Operator, buffer));
         state = H;
         size = 0;
     }
-    else if(currentSymbolType == Quote)
+    else if (currentSymbolType == Quote)
         state = S;
-    else if(currentSymbolType == Alpha)
+    else if (currentSymbolType == Alpha)
         state = K;
-    else if(currentSymbolType == Digit)
+    else if (currentSymbolType == Digit)
         state = N;
-    else if(currentSymbolType == Mark)
+    else if (currentSymbolType == Mark)
         state = I;
-    else if(currentSymbolType == Colon)
+    else if (currentSymbolType == Colon)
         state = A;
-    else if(currentSymbolType == Separator){
+    else if (currentSymbolType == Separator)
+    {
         size = 0;
         state = H;
     }
     else
         error();
-
 }
-
-
 
 void LexAnalyser::step(int c)
 {
@@ -372,11 +388,11 @@ void LexAnalyser::step(int c)
     switchState();
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     int c;
     LexAnalyser la;
-    FILE *file = fopen("test.anlang", "r");
+    FILE* file = fopen("test.anlang", "r");
 
     while ((c = fgetc(file)) != EOF)
         la.step(c);
