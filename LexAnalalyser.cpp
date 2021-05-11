@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char *lex_keywords[] = {"print", "check", "jmpt"};
+const char *lex_builtin_func[] = {"?prod", "?sell"};
+
 enum LexemeType
 {
     Number,
@@ -11,7 +14,7 @@ enum LexemeType
     Operator,
     Keyword,
     AssigmentOperator,
-    Error
+    Err
 };
 
 enum SymbolType
@@ -26,6 +29,51 @@ enum SymbolType
     Operation,
     SymbolError
 };
+
+enum ErrorType
+{
+    UnexpectedSymbol,
+    UnknownKeyword,
+    UnknownFunc,
+    AlphaAfterNumber,
+    UnclosedQuote
+};
+
+struct Error
+{
+    int line;
+    int pos;
+    ErrorType type;
+    char *value;
+    Error(int l, int p, ErrorType t) : line(l), pos(p), type(t) {}
+    const char *getStringErrorType() const;
+    void printData() const;
+};
+
+void Error::printData() const
+{
+    printf("Error at line %d: %s\n\t%s\n", line, getStringErrorType(),
+            value);
+}
+
+const char *Error::getStringErrorType() const
+{
+    switch (type)
+    {
+    case UnexpectedSymbol:
+        return "UnexpecctedSymbol";
+    case UnknownKeyword:
+        return "UnknownKeyword";
+    case UnknownFunc:
+        return "UnknownFunc";
+    case AlphaAfterNumber:
+        return "AlphaAfterNumber";
+    case UnclosedQuote:
+        return "UnclosedQuote";
+    default:
+        return 0;
+    }
+}
 
 struct Lexeme
 {
@@ -45,7 +93,7 @@ struct Lexeme
         else
             value = 0;
     }
-    const char* getTypeString();
+    const char* getTypeString() const;
     Lexeme(const Lexeme& l);
 };
 
@@ -57,10 +105,10 @@ Lexeme::Lexeme(const Lexeme& l)
     strcpy(value, l.value);
 }
 
-const char* Lexeme::getTypeString()
+const char* Lexeme::getTypeString() const
 {
     switch (type)
-    {
+    { 
     case Number:
         return "Number";
     case Identificator:
@@ -82,7 +130,6 @@ class LexemeList
 {
     Lexeme* head;
     Lexeme* tail;
-
 public:
     LexemeList()
         : head(0)
@@ -140,7 +187,7 @@ class LexAnalyser
     int size;
     int currentSymbolType;
     int currentLine;
-    int errorLine;
+    Error *err;
     State state;
     void switchState();
     void number();
@@ -160,8 +207,8 @@ public:
         return lexList;
     }
     LexAnalyser();
-    void step(int c);
-    void processErrors();
+    int step(int c);
+    Error *isErrored();
 };
 
 LexAnalyser::LexAnalyser()
@@ -256,8 +303,22 @@ void LexAnalyser::number()
 
 void LexAnalyser::error()
 {
-    if (state != E)
-        errorLine = currentLine;
+    switch (state)
+    {
+    case E:
+        return;
+    case N:
+        err = new Error(currentLine, 0, AlphaAfterNumber);
+        break;
+    case K:
+        err = new Error(currentLine, 0, UnknownKeyword);
+    default:
+        err = new Error(currentLine, 0, UnexpectedSymbol);
+    }
+    state = E;
+    buffer[size] = 0;
+    err->value = new char[strlen(buffer) + 1];
+    strcpy(err->value, buffer);
     state = E;
 }
 
@@ -309,7 +370,13 @@ void LexAnalyser::keyword()
     }
     else if (currentSymbolType == Alpha)
         state = K;
-    else
+    
+    bool flag = false;
+    buffer[size] = 0;
+    for (unsigned i = 0; i < 3; i++)
+         flag = flag ||
+             strncmp(buffer, lex_keywords[i], strlen(buffer)) == 0; 
+    if (!flag)
         error();
 }
 
@@ -383,31 +450,35 @@ void LexAnalyser::start()
         error();
 }
 
-void LexAnalyser::step(int c)
+int LexAnalyser::step(int c)
 {
     buffer[size++] = c;
     if (c == '\n')
         currentLine++;
+    if (c == EOF) 
+    {
+        buffer[size - 1] = ' ';
+    }
     switchState();
+    return c != EOF;
 }
 
-void LexAnalyser::processErrors()
+Error *LexAnalyser::isErrored()
 {
     if (state == E)
-        printf("Error at line %d\n", errorLine);
+        return err;
+    return 0;
 }
 
 int main(int argc, char* argv[])
 {
-    int c;
     LexAnalyser la;
     FILE* file = fopen("test.anlang", "r");
 
-    while ((c = fgetc(file)) != EOF)
-        la.step(c);
-
-    la.step(' ');
+    while (la.step(fgetc(file)));//(c = fgetc(file)) != EOF)
     la.getLexemeList().display();
-    la.processErrors();
+    Error *e;
+    if ((e = la.isErrored()))
+        e->printData();
     return 0;
 }

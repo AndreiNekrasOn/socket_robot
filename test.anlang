@@ -16,4 +16,3 @@ print "hello"
 _print $x
 ?prod ($b[32423]);
 print;
-
