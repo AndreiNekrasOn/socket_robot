@@ -2,18 +2,18 @@
 
 print 2, 2, "test";
 
-x = 1
+$x = 1
 @while
-check (x = 20);
-x = x + 1;
+check ($x = 20);
+$x = $x + 1;
 jmpt @while
 
 check (x = 22);
 jmpt @else
-print x
 @else
 print "hello"
 
+_print $x
 ?prod ($b[32423]);
 print;
 

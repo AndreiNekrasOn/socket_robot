@@ -121,7 +121,6 @@ void LexemeList::display()
 
 class LexAnalyser
 {
-    friend int main(int argc, char* argv[]); // for debug!
     enum State
     {
         N,
@@ -141,6 +140,7 @@ class LexAnalyser
     int size;
     int currentSymbolType;
     int currentLine;
+    int errorLine;
     State state;
     void switchState();
     void number();
@@ -161,6 +161,7 @@ public:
     }
     LexAnalyser();
     void step(int c);
+    void processErrors();
 };
 
 LexAnalyser::LexAnalyser()
@@ -255,6 +256,8 @@ void LexAnalyser::number()
 
 void LexAnalyser::error()
 {
+    if (state != E)
+        errorLine = currentLine;
     state = E;
 }
 
@@ -388,6 +391,12 @@ void LexAnalyser::step(int c)
     switchState();
 }
 
+void LexAnalyser::processErrors()
+{
+    if (state == E)
+        printf("Error at line %d\n", errorLine);
+}
+
 int main(int argc, char* argv[])
 {
     int c;
@@ -399,5 +408,6 @@ int main(int argc, char* argv[])
 
     la.step(' ');
     la.getLexemeList().display();
+    la.processErrors();
     return 0;
 }
