@@ -2,20 +2,18 @@
 
 print 2, 2, "test";
 
+x = 1
+@while
+check (x = 20);
+x = x + 1;
+jmpt @while
 
+check (x = 22);
+jmpt @else
+print x
+@else
+print "hello"
 
-while -(2 * 2 + 2 - 2 / 2 > 5 or not(2 * 2 + 2 - 2 / 2))  do {
-	while 2 do {
-		while 2 do {
-			$a:=234+324;
-		}
-		?endturn();
-		?sell(7 12);
-	}
-}
 ?prod ($b[32423]);
 print;
 
-if ($a[2+2*2] > (2%2 + 2) or (2+2) and (2+2)) then {
-    $a[2]:=2;
-}

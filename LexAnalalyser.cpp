@@ -174,7 +174,7 @@ LexAnalyser::LexAnalyser()
 
 SymbolType LexAnalyser::getSymbolType(int c)
 {
-    if (isspace(c) || c == ';' || c == ',' || c == '{' || c == '}')
+    if (isspace(c) || c == ';' || c == ',')
         return Separator;
     else if (isalpha(c))
         return Alpha;
