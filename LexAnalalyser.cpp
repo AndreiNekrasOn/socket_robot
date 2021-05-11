@@ -84,7 +84,6 @@ public:
     LexemeList() : head(0), tail(0) {}
     void add(Lexeme l);
     void display();
-    ~LexemeList();
 };
 
 void LexemeList::add(Lexeme l) 
@@ -112,16 +111,6 @@ void LexemeList::display()
                 tmp->getTypeString(), tmp->lineNumber, tmp->value);
     }
 } 
-
-LexemeList::~LexemeList()
-{
-    while(head != 0)
-    {
-        Lexeme *tmp = head;
-        head = head->next;
-        delete tmp;
-    }
-}
 
 class LexAnalyser
 {
